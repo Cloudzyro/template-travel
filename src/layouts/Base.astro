@@ -81,7 +81,7 @@ const path = Astro.url.pathname.replace(/\/$/, "") || "/";
             }
           </ul>
         </nav>
-        <a class="btn btn-primary btn-sm" href="/enquire">Enquire</a>
+        <a class="btn btn-primary btn-sm" href="/inquire">Inquire</a>
       </div>
     </header>
     <main id="main">
@@ -107,7 +107,7 @@ const path = Astro.url.pathname.replace(/\/$/, "") || "/";
           <h2>Pages</h2>
           <ul>
             {site.nav.map((n) => <li><a href={n.href}>{n.label}</a></li>)}
-            <li><a href="/enquire">Enquire</a></li>
+            <li><a href="/inquire">Inquire</a></li>
           </ul>
         </div>
       </div>

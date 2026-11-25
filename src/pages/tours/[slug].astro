@@ -80,7 +80,7 @@ const schema = {
           <th scope="col">Dates</th>
           <th scope="col" class="r">Price per person</th>
           <th scope="col">Availability</th>
-          <th scope="col"><span class="sr">Enquire</span></th>
+          <th scope="col"><span class="sr">Inquire</span></th>
         </tr>
       </thead>
       <tbody>
@@ -93,8 +93,8 @@ const schema = {
               <td class="r tnum">{money(d.price)}</td>
               <td class:list={["tnum", { few: d.spaces > 0 && d.spaces <= 3 }]}>{spacesText(d.spaces)}</td>
               <td class="r">
-                <a class="btn btn-quiet btn-sm" href={`/enquire?tour=${t.slug}&date=${d.date}`}>
-                  {d.spaces === 0 ? "Join the waitlist" : "Enquire"}
+                <a class="btn btn-quiet btn-sm" href={`/inquire?tour=${t.slug}&date=${d.date}`}>
+                  {d.spaces === 0 ? "Join the waitlist" : "Inquire"}
                   <span class="sr"> about {longDate(d.date)}</span>
                 </a>
               </td>

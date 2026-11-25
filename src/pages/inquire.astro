@@ -8,21 +8,21 @@ import { longDate, money } from "../lib/format";
 // With no endpoint set, sending opens the visitor's email app instead.
 // A tour and departure date in the address (?tour=...&date=...) fill the form in.
 const endpoint = import.meta.env.PUBLIC_FORM_ENDPOINT ?? "";
-const subject = `Enquiry for ${site.name}`;
+const subject = `Inquiry for ${site.name}`;
 const departures = tours.flatMap((t) =>
   t.departures.map((d) => ({ tour: t.slug, date: d.date, label: `${longDate(d.date)}, ${money(d.price)}${d.spaces === 0 ? ", waitlist" : ""}` })),
 );
 ---
 
-<Base title="Enquire" description={`Ask about a ${site.name} tour, or hold a place on a departure.`}>
+<Base title="Inquire" description={`Ask about a ${site.name} tour, or hold a place on a departure.`}>
   <PageHead
-    title="Enquire about a journey"
+    title="Inquire about a journey"
     intro="Tell us which tour and dates you have in mind. A real person replies within one working day, and nothing is booked until you say so."
   />
 
   <div class="wrap layout">
     <form
-      class="enquiry"
+      class="inquiry"
       method="post"
       action={endpoint || `mailto:${site.email}`}
       data-endpoint={endpoint}
@@ -78,7 +78,7 @@ const departures = tours.flatMap((t) =>
         <textarea name="message" rows="5"></textarea>
       </label>
       <div class="actions">
-        <button class="btn btn-primary" type="submit">Send enquiry</button>
+        <button class="btn btn-primary" type="submit">Send inquiry</button>
         <p class="status" role="status" aria-live="polite"></p>
       </div>
     </form>
@@ -97,7 +97,7 @@ const departures = tours.flatMap((t) =>
 
 <script>
   type Dep = { tour: string; date: string; label: string };
-  document.querySelectorAll<HTMLFormElement>("form.enquiry").forEach((form) => {
+  document.querySelectorAll<HTMLFormElement>("form.inquiry").forEach((form) => {
     const deps: Dep[] = JSON.parse(form.dataset.departures ?? "[]");
     const tour = form.elements.namedItem("tour") as HTMLSelectElement;
     const date = form.elements.namedItem("date") as HTMLSelectElement;
@@ -131,7 +131,7 @@ const departures = tours.flatMap((t) =>
           lines.push(`${key}: ${value}`);
         }
         window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject ?? "")}&body=${encodeURIComponent(lines.join("\n"))}`;
-        status.textContent = "Your email app should open with your enquiry filled in.";
+        status.textContent = "Your email app should open with your inquiry filled in.";
         return;
       }
 
@@ -164,7 +164,7 @@ const departures = tours.flatMap((t) =>
     align-items: start;
     padding-bottom: 112px;
   }
-  .enquiry {
+  .inquiry {
     display: grid;
     gap: 16px;
     padding: clamp(20px, 4vw, 32px);

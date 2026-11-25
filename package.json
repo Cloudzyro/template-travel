@@ -2,7 +2,7 @@
   "name": "template-travel",
   "version": "1.0.0",
   "private": true,
-  "description": "A travel agency and tour operator website template built with Astro: destinations, tours with day-by-day itineraries, dates and prices, and an enquiry form.",
+  "description": "A travel agency and tour operator website template built with Astro: destinations, tours with day-by-day itineraries, dates and prices, and an inquiry form.",
   "license": "MIT",
   "type": "module",
   "scripts": {
