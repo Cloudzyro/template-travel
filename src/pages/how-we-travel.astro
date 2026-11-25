@@ -1,0 +1,88 @@
+---
+import Base from "../layouts/Base.astro";
+import PageHead from "../components/PageHead.astro";
+import { howWeTravel, principles } from "../data/site";
+---
+
+<Base title="How we travel" description={howWeTravel.intro}>
+  <PageHead title="How we travel" intro={howWeTravel.intro} />
+
+  <section class="wrap principles" aria-label="What every journey has">
+    {
+      principles.map((p) => (
+        <div>
+          <h2>{p.title}</h2>
+          <p>{p.text}</p>
+        </div>
+      ))
+    }
+  </section>
+
+  <section class="wrap details" aria-label="Details">
+    {
+      howWeTravel.sections.map((s) => (
+        <div class="row">
+          <h2 class="display">{s.title}</h2>
+          <p>{s.text}</p>
+        </div>
+      ))
+    }
+    <p class="cta">
+      Questions about a route or your fitness? <a class="text-link" href="/enquire">Write to us</a> and the guide will answer.
+    </p>
+  </section>
+</Base>
+
+<style>
+  .principles {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px;
+    padding-block: 32px 64px;
+    border-top: 1px solid var(--line-strong);
+  }
+  .principles h2 {
+    font-size: 16px;
+    font-weight: 500;
+  }
+  .principles p {
+    margin-top: 4px;
+    color: var(--ink-2);
+    font-size: 15px;
+  }
+  .details {
+    padding-bottom: 112px;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 40rem);
+    gap: 32px;
+    padding-block: 28px;
+    border-top: 1px solid var(--line);
+  }
+  .row h2 {
+    font-size: 24px;
+  }
+  .row p {
+    color: var(--ink-2);
+    font-size: 17px;
+  }
+  .cta {
+    margin-top: 32px;
+    font-size: 17px;
+  }
+  @media (max-width: 900px) {
+    .principles {
+      grid-template-columns: 1fr 1fr;
+    }
+    .row {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+  }
+  @media (max-width: 520px) {
+    .principles {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

@@ -1,0 +1,350 @@
+---
+import Base from "../../layouts/Base.astro";
+import TopoMap from "../../components/TopoMap.astro";
+import { site, tours, type Tour } from "../../data/site";
+import { money, fromPrice, destinationName, longDate, dateRange, spacesText } from "../../lib/format";
+
+export function getStaticPaths() {
+  return tours.map((tour) => ({ params: { slug: tour.slug }, props: { tour } }));
+}
+
+const { tour: t } = Astro.props as { tour: Tour };
+const labels = t.route.map((_, i) => (i === 0 ? t.from : i === t.route.length - 1 ? t.to : ""));
+const schema = {
+  "@context": "https://schema.org",
+  "@type": "TouristTrip",
+  name: t.name,
+  description: t.summary,
+  provider: { "@type": "TravelAgency", name: site.name },
+  itinerary: t.itinerary.map((d) => d.title),
+  offers: t.departures.map((d) => ({
+    "@type": "Offer",
+    price: d.price,
+    priceCurrency: "USD",
+    availability: d.spaces > 0 ? "https://schema.org/InStock" : "https://schema.org/SoldOut",
+    validFrom: d.date,
+  })),
+};
+---
+
+<Base title={t.name} description={t.summary} schema={schema}>
+  <header class="wrap head">
+    <p class="crumb muted"><a href="/tours">Tours</a> / {destinationName(t.destination)}</p>
+    <h1 class="display h1">{t.name}</h1>
+    <p class="lede">{t.summary}</p>
+    <dl class="facts">
+      <div><dt>Length</dt><dd class="tnum">{t.days} days</dd></div>
+      <div><dt>Level</dt><dd>{t.level}</dd></div>
+      <div><dt>Group</dt><dd class="tnum">Up to {t.group}</dd></div>
+      <div><dt>Route</dt><dd>{t.from} to {t.to}</dd></div>
+      <div><dt>From</dt><dd class="tnum">{money(fromPrice(t))}</dd></div>
+    </dl>
+    <p class="level-note muted">{t.levelNote}</p>
+  </header>
+
+  <section class="wrap itinerary" aria-labelledby="days-title">
+    <div class="days-col">
+      <h2 id="days-title" class="display h2">Day by day</h2>
+      <ol class="days">
+        {
+          t.itinerary.map((d, i) => (
+            <li>
+              <span class="dot tnum" aria-hidden="true">{i + 1}</span>
+              <div>
+                <h3>
+                  <span class="sr">Day {i + 1}: </span>
+                  {d.title}
+                </h3>
+                <p>{d.text}</p>
+                <p class="meta muted">
+                  {d.walk && <span class="tnum">{d.walk}</span>}
+                  <span>{d.stay === "Departure day" ? "Departure day" : `Night in ${d.stay}`}</span>
+                </p>
+              </div>
+            </li>
+          ))
+        }
+      </ol>
+    </div>
+    <figure class="map">
+      <TopoMap route={t.route} seed={t.terrain} labels={labels} title={`Map of the route, ${t.from} to ${t.to}, with a numbered stop for each day`} />
+      <figcaption class="muted">Each number is a night on the route. Drawn to suggest the terrain, not to scale.</figcaption>
+    </figure>
+  </section>
+
+  <section class="wrap dates" id="dates" aria-labelledby="dates-title">
+    <h2 id="dates-title" class="display h2">Dates and prices</h2>
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Dates</th>
+          <th scope="col" class="r">Price per person</th>
+          <th scope="col">Availability</th>
+          <th scope="col"><span class="sr">Enquire</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          t.departures.map((d) => (
+            <tr class:list={{ full: d.spaces === 0 }}>
+              <th scope="row" class="tnum">
+                {dateRange(d.date, t.days)}
+              </th>
+              <td class="r tnum">{money(d.price)}</td>
+              <td class:list={["tnum", { few: d.spaces > 0 && d.spaces <= 3 }]}>{spacesText(d.spaces)}</td>
+              <td class="r">
+                <a class="btn btn-quiet btn-sm" href={`/enquire?tour=${t.slug}&date=${d.date}`}>
+                  {d.spaces === 0 ? "Join the waitlist" : "Enquire"}
+                  <span class="sr"> about {longDate(d.date)}</span>
+                </a>
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+    <p class="muted small">Prices are per person sharing a twin or double room. Single rooms are $650 extra, subject to availability. A $500 deposit holds a place.</p>
+  </section>
+
+  <section class="wrap incl" aria-label="What's included">
+    <div>
+      <h2>Included</h2>
+      <ul>{t.included.map((x) => <li>{x}</li>)}</ul>
+    </div>
+    <div>
+      <h2>Not included</h2>
+      <ul class="not">{t.notIncluded.map((x) => <li>{x}</li>)}</ul>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .head {
+    padding-top: clamp(40px, 6vw, 80px);
+    padding-bottom: 48px;
+  }
+  .crumb {
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+  .crumb a {
+    text-decoration: none;
+  }
+  .crumb a:hover {
+    color: var(--accent);
+  }
+  .lede {
+    margin-top: 16px;
+  }
+  .facts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px 48px;
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line-strong);
+  }
+  dt {
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+  dd {
+    margin: 0;
+    font-size: 17px;
+  }
+  .level-note {
+    margin-top: 16px;
+    font-size: 15px;
+  }
+  .itinerary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: clamp(32px, 5vw, 72px);
+    align-items: start;
+    padding-block: 64px;
+    border-top: 1px solid var(--line);
+  }
+  .days {
+    margin-top: 32px;
+    position: relative;
+  }
+  .days li {
+    position: relative;
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 16px;
+    padding-bottom: 28px;
+  }
+  .days li:not(:last-child)::before {
+    /* the route line running between day stops */
+    content: "";
+    position: absolute;
+    left: 15px;
+    top: 30px;
+    bottom: 0;
+    width: 2px;
+    background: var(--accent);
+    opacity: 0.5;
+  }
+  .dot {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 2px solid var(--accent);
+    background: var(--card);
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .days li:first-child .dot,
+  .days li:last-child .dot {
+    background: var(--accent);
+    color: #fff;
+  }
+  .days h3 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 21px;
+    line-height: 1.3;
+    padding-top: 2px;
+  }
+  .days p {
+    margin-top: 4px;
+    color: var(--ink-2);
+  }
+  .meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+    font-size: 14px;
+  }
+  .map {
+    position: sticky;
+    top: 24px;
+    padding: 12px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+  }
+  .map :global(svg) {
+    border-radius: 8px;
+  }
+  .map figcaption {
+    padding: 12px 4px 0;
+    font-size: 13px;
+  }
+  .dates {
+    padding-block: 64px;
+    border-top: 1px solid var(--line);
+    scroll-margin-top: 16px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-block: 24px 16px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+  }
+  thead th {
+    text-align: left;
+    font-weight: 400;
+    font-size: 14px;
+    color: var(--ink-3);
+    padding: 12px 20px;
+    background: var(--raised);
+  }
+  tbody th,
+  td {
+    text-align: left;
+    padding: 14px 20px;
+    border-top: 1px solid var(--line);
+    font-weight: 400;
+  }
+  tbody th {
+    font-weight: 500;
+  }
+  .r {
+    text-align: right !important;
+  }
+  .few {
+    color: var(--accent);
+  }
+  .full th,
+  .full td:nth-child(2) {
+    color: var(--ink-3);
+  }
+  .small {
+    font-size: 14px;
+  }
+  .incl {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+    padding-block: 64px 112px;
+    border-top: 1px solid var(--line);
+  }
+  .incl h2 {
+    font-size: 18px;
+    font-weight: 500;
+    margin-bottom: 16px;
+  }
+  .incl ul {
+    display: grid;
+    gap: 10px;
+  }
+  .incl li {
+    padding-left: 20px;
+    position: relative;
+    color: var(--ink-2);
+  }
+  .incl li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 11px;
+    width: 8px;
+    height: 2px;
+    background: var(--ink-3);
+  }
+  @media (max-width: 900px) {
+    .itinerary,
+    .incl {
+      grid-template-columns: 1fr;
+    }
+    .map {
+      position: static;
+      order: -1;
+    }
+  }
+  @media (max-width: 640px) {
+    thead {
+      display: none;
+    }
+    table,
+    tbody,
+    tr,
+    tbody th,
+    td {
+      display: block;
+    }
+    tr {
+      padding: 12px 16px;
+      border-top: 1px solid var(--line);
+    }
+    tbody th,
+    td {
+      border: 0;
+      padding: 2px 0;
+    }
+    .r {
+      text-align: left !important;
+    }
+    td:last-child {
+      padding-top: 8px;
+    }
+  }
+</style>

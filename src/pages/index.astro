@@ -1,0 +1,192 @@
+---
+import Base from "../layouts/Base.astro";
+import TopoMap from "../components/TopoMap.astro";
+import TourRow from "../components/TourRow.astro";
+import { hero, principles, tours, destinations } from "../data/site";
+
+const lead = tours[0];
+const labels = lead.route.map((_, i) => (i === 0 ? lead.from : i === lead.route.length - 1 ? lead.to : ""));
+---
+
+<Base>
+  <section class="hero wrap">
+    <div class="copy">
+      <h1 class="display h1">{hero.title}</h1>
+      <p class="lede">{hero.intro}</p>
+      <div class="actions">
+        <a class="btn btn-primary" href="/tours">See the tours</a>
+        <a class="btn btn-quiet" href="/how-we-travel">How we travel</a>
+      </div>
+    </div>
+    <figure class="hero-map">
+      <TopoMap route={lead.route} seed={lead.terrain} labels={labels} title={`Map of the ${lead.name} route, ${lead.days} days from ${lead.from} to ${lead.to}`} />
+      <figcaption>
+        <a href={`/tours/${lead.slug}`}>{lead.name}</a>
+        <span class="muted tnum">{lead.days} days, {lead.from} to {lead.to}</span>
+      </figcaption>
+    </figure>
+  </section>
+
+  <section class="wrap principles" aria-label="How we travel">
+    <ul>
+      {
+        principles.map((p) => (
+          <li>
+            <h2>{p.title}</h2>
+            <p>{p.text}</p>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  <section class="section wrap" aria-labelledby="tours-title">
+    <div class="head">
+      <h2 id="tours-title" class="display h2">Journeys for 2027</h2>
+      <a class="text-link" href="/tours">Filter by month and length</a>
+    </div>
+    <ul class="tours">
+      {tours.map((t) => <TourRow tour={t} />)}
+    </ul>
+  </section>
+
+  <section class="section dest-band" aria-labelledby="dest-title">
+    <div class="wrap dest">
+      <h2 id="dest-title" class="display h2">Where we walk</h2>
+      <ul>
+        {
+          destinations.map((d) => (
+            <li>
+              <a href={`/destinations#${d.id}`}>
+                <span class="d-name">{d.name}</span>
+                <span class="d-blurb">{d.blurb}</span>
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+    gap: clamp(32px, 5vw, 72px);
+    align-items: center;
+    padding-block: clamp(40px, 6vw, 80px);
+  }
+  .copy {
+    display: grid;
+    gap: 24px;
+  }
+  .actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .hero-map {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 12px;
+    box-shadow: 0 8px 24px rgb(27 36 34 / 0.06);
+  }
+  .hero-map :global(svg) {
+    border-radius: 8px;
+  }
+  figcaption {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 12px 4px 0;
+    font-size: 14px;
+  }
+  figcaption a {
+    font-weight: 500;
+    text-decoration: none;
+  }
+  figcaption a:hover {
+    color: var(--accent);
+  }
+  .principles ul {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 32px;
+    padding-top: 32px;
+    border-top: 1px solid var(--line-strong);
+  }
+  .principles h2 {
+    font-size: 16px;
+    font-weight: 500;
+  }
+  .principles p {
+    margin-top: 4px;
+    color: var(--ink-2);
+    font-size: 15px;
+  }
+  .head {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .tours {
+    border-top: 1px solid var(--line-strong);
+  }
+  .dest-band {
+    background: var(--card);
+    border-top: 1px solid var(--line);
+  }
+  .dest {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 48px;
+  }
+  .dest a {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 24px;
+    padding-block: 16px;
+    border-bottom: 1px solid var(--line);
+    text-decoration: none;
+  }
+  .dest li:first-child a {
+    border-top: 1px solid var(--line-strong);
+  }
+  .d-name {
+    font-family: var(--display);
+    font-size: 21px;
+    transition: color 150ms var(--ease);
+  }
+  .dest a:hover .d-name {
+    color: var(--accent);
+  }
+  .d-blurb {
+    color: var(--ink-2);
+    font-size: 15px;
+  }
+  @media (max-width: 960px) {
+    .hero,
+    .dest {
+      grid-template-columns: 1fr;
+    }
+    .principles ul {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  @media (max-width: 560px) {
+    .principles ul {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    .dest a {
+      grid-template-columns: 1fr;
+      gap: 4px;
+    }
+  }
+</style>

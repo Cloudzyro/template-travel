@@ -1,0 +1,233 @@
+---
+import Base from "../layouts/Base.astro";
+import PageHead from "../components/PageHead.astro";
+import { site, tours } from "../data/site";
+import { longDate, money } from "../lib/format";
+
+// Sends to PUBLIC_FORM_ENDPOINT (Formspree, Basin, a Supabase function or similar).
+// With no endpoint set, sending opens the visitor's email app instead.
+// A tour and departure date in the address (?tour=...&date=...) fill the form in.
+const endpoint = import.meta.env.PUBLIC_FORM_ENDPOINT ?? "";
+const subject = `Enquiry for ${site.name}`;
+const departures = tours.flatMap((t) =>
+  t.departures.map((d) => ({ tour: t.slug, date: d.date, label: `${longDate(d.date)}, ${money(d.price)}${d.spaces === 0 ? ", waitlist" : ""}` })),
+);
+---
+
+<Base title="Enquire" description={`Ask about a ${site.name} tour, or hold a place on a departure.`}>
+  <PageHead
+    title="Enquire about a journey"
+    intro="Tell us which tour and dates you have in mind. A real person replies within one working day, and nothing is booked until you say so."
+  />
+
+  <div class="wrap layout">
+    <form
+      class="enquiry"
+      method="post"
+      action={endpoint || `mailto:${site.email}`}
+      data-endpoint={endpoint}
+      data-email={site.email}
+      data-subject={subject}
+      data-departures={JSON.stringify(departures)}
+    >
+      {
+        !endpoint && (
+          <p class="note" role="note">
+            This form isn't connected yet, so sending it opens your email app. You can also write to{" "}
+            <a href={`mailto:${site.email}?subject=${encodeURIComponent(subject)}`}>{site.email}</a>.
+          </p>
+        )
+      }
+      <input type="hidden" name="_subject" value={subject} />
+      <div class="row">
+        <label class="field">
+          <span>Tour</span>
+          <select name="tour">
+            <option value="">Not sure yet</option>
+            {tours.map((t) => <option value={t.slug}>{t.name}</option>)}
+          </select>
+        </label>
+        <label class="field">
+          <span>Departure</span>
+          <select name="date">
+            <option value="">Any date</option>
+          </select>
+        </label>
+      </div>
+      <div class="row">
+        <label class="field">
+          <span>Travelers</span>
+          <input name="travelers" type="number" min="1" max="12" value="2" inputmode="numeric" />
+        </label>
+        <label class="field">
+          <span>Rooms</span>
+          <select name="rooms">
+            <option>Sharing a double or twin</option>
+            <option>A single room each</option>
+            <option>A mix, we'll explain below</option>
+          </select>
+        </label>
+      </div>
+      <div class="row">
+        <label class="field"><span>Your name</span><input name="name" autocomplete="name" required /></label>
+        <label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" required /></label>
+      </div>
+      <label class="field"><span>Phone <span class="hint">(optional)</span></span><input name="phone" type="tel" autocomplete="tel" /></label>
+      <label class="field">
+        <span>Anything we should know <span class="hint">(fitness, diet, questions)</span></span>
+        <textarea name="message" rows="5"></textarea>
+      </label>
+      <div class="actions">
+        <button class="btn btn-primary" type="submit">Send enquiry</button>
+        <p class="status" role="status" aria-live="polite"></p>
+      </div>
+    </form>
+
+    <aside>
+      <h2>What happens next</h2>
+      <ol>
+        <li>We reply within one working day with availability and any answers.</li>
+        <li>If it's a fit, a $500 deposit holds your place for that departure.</li>
+        <li>The balance is due 70 days before you travel, with your full trip notes.</li>
+      </ol>
+      <p class="muted">{site.hours}<br /><a class="tnum" href={`tel:${site.phoneHref}`}>{site.phone}</a></p>
+    </aside>
+  </div>
+</Base>
+
+<script>
+  type Dep = { tour: string; date: string; label: string };
+  document.querySelectorAll<HTMLFormElement>("form.enquiry").forEach((form) => {
+    const deps: Dep[] = JSON.parse(form.dataset.departures ?? "[]");
+    const tour = form.elements.namedItem("tour") as HTMLSelectElement;
+    const date = form.elements.namedItem("date") as HTMLSelectElement;
+    const fillDates = () => {
+      const chosen = date.value;
+      date.length = 1;
+      deps
+        .filter((d) => d.tour === tour.value)
+        .forEach((d) => date.add(new Option(d.label, d.date, false, d.date === chosen)));
+      date.disabled = !tour.value;
+    };
+    const params = new URLSearchParams(window.location.search);
+    const wantTour = params.get("tour");
+    if (wantTour && [...tour.options].some((o) => o.value === wantTour)) tour.value = wantTour;
+    fillDates();
+    const wantDate = params.get("date");
+    if (wantDate && [...date.options].some((o) => o.value === wantDate)) date.value = wantDate;
+    tour.addEventListener("change", fillDates);
+
+    const status = form.querySelector<HTMLElement>(".status")!;
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const { endpoint, email, subject } = form.dataset;
+      const data = new FormData(form);
+      if (date.value) data.set("date", date.options[date.selectedIndex].text);
+
+      if (!endpoint) {
+        const lines: string[] = [];
+        for (const [key, value] of data.entries()) {
+          if (key.startsWith("_") || !String(value).trim()) continue;
+          lines.push(`${key}: ${value}`);
+        }
+        window.location.href = `mailto:${email}?subject=${encodeURIComponent(subject ?? "")}&body=${encodeURIComponent(lines.join("\n"))}`;
+        status.textContent = "Your email app should open with your enquiry filled in.";
+        return;
+      }
+
+      const button = form.querySelector<HTMLButtonElement>("button[type=submit]")!;
+      button.disabled = true;
+      status.textContent = "Sending";
+      try {
+        const res = await fetch(endpoint, { method: "POST", body: data, headers: { Accept: "application/json" } });
+        if (!res.ok) throw new Error(String(res.status));
+        form.reset();
+        fillDates();
+        status.textContent = "Thank you. We'll reply within one working day.";
+      } catch {
+        status.textContent = "";
+        status.append("Sorry, that didn't send. Please email us at ");
+        const link = Object.assign(document.createElement("a"), { href: `mailto:${email}`, textContent: email });
+        status.append(link, ".");
+      } finally {
+        button.disabled = false;
+      }
+    });
+  });
+</script>
+
+<style>
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 48px;
+    align-items: start;
+    padding-bottom: 112px;
+  }
+  .enquiry {
+    display: grid;
+    gap: 16px;
+    padding: clamp(20px, 4vw, 32px);
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+  }
+  .row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+  }
+  .note {
+    font-size: 14px;
+    color: var(--ink-2);
+    background: var(--raised);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+  }
+  select:disabled {
+    color: var(--ink-3);
+    background: var(--raised);
+  }
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .status {
+    font-size: 15px;
+    color: var(--ink-2);
+  }
+  aside {
+    display: grid;
+    gap: 16px;
+  }
+  aside h2 {
+    font-size: 18px;
+    font-weight: 500;
+  }
+  aside ol {
+    display: grid;
+    gap: 12px;
+    counter-reset: s;
+    color: var(--ink-2);
+  }
+  aside li {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    counter-increment: s;
+  }
+  aside li::before {
+    content: counter(s);
+    font-family: var(--display);
+    color: var(--accent);
+  }
+  aside p {
+    font-size: 15px;
+  }
+  @media (max-width: 900px) {
+    .layout {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

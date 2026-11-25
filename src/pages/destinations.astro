@@ -1,0 +1,73 @@
+---
+import Base from "../layouts/Base.astro";
+import PageHead from "../components/PageHead.astro";
+import TourRow from "../components/TourRow.astro";
+import { destinations, tours } from "../data/site";
+---
+
+<Base title="Destinations" description="Where Farline Journeys walks: Scotland, the Dolomites, Portugal, Japan and Norway.">
+  <PageHead title="Where we walk" intro="Five places we know well enough to slow down in. Each has one journey, walked by its guide every season." />
+
+  <div class="wrap">
+    {
+      destinations.map((d) => {
+        const list = tours.filter((t) => t.destination === d.id);
+        return (
+          <section id={d.id} class="dest" aria-labelledby={`${d.id}-title`}>
+            <div class="intro">
+              <h2 id={`${d.id}-title`} class="display h2">{d.name}</h2>
+              <p>{d.blurb}</p>
+            </div>
+            <ul>
+              {list.map((t) => <TourRow tour={t} />)}
+            </ul>
+          </section>
+        );
+      })
+    }
+  </div>
+</Base>
+
+<style>
+  .wrap {
+    padding-bottom: 96px;
+  }
+  .dest {
+    display: grid;
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: 32px;
+    padding-block: 32px;
+    border-top: 1px solid var(--line-strong);
+    scroll-margin-top: 16px;
+  }
+  .intro p {
+    margin-top: 8px;
+    color: var(--ink-2);
+    font-size: 15px;
+  }
+  .dest :global(.tour) {
+    grid-template-columns: 180px minmax(0, 1fr);
+    padding-top: 0;
+    border-bottom: 0;
+  }
+  .dest :global(.facts) {
+    grid-column: 2;
+    grid-template-columns: repeat(4, auto);
+    justify-content: start;
+    gap: 8px 32px;
+  }
+  @media (max-width: 900px) {
+    .dest {
+      grid-template-columns: 1fr;
+    }
+  }
+  @media (max-width: 600px) {
+    .dest :global(.tour) {
+      grid-template-columns: 1fr;
+    }
+    .dest :global(.facts) {
+      grid-column: 1;
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>
